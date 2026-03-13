@@ -1,0 +1,30 @@
+# Flutter and Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+build/
+coverage/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# macOS
+.DS_Store
+
+# Android
+android/.gradle/
+android/local.properties
+
+# iOS and macOS generated Flutter files
+ios/Flutter/ephemeral/
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/Generated.xcconfig
+macos/Flutter/ephemeral/
+
+# Linux and Windows generated build files
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
