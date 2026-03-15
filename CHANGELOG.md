@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-03-14
+
+### Changed
+
+- Reworked the live flight view to render at the real window resolution instead of a fixed low-resolution cockpit buffer.
+- Expanded the immersive play viewport to use the full play surface when the standalone HUD shell is hidden.
+- Added a new deep-space backdrop, stronger bloom/post-processing, larger ship presence, and tighter opening scene composition for a more modern 3D presentation.
+- Added hover tooltips to interactive shell controls including title actions, touch controls, market actions, power routing, upgrades, dock services, comms responses, and save/load actions.
+
+### Removed
+
+- Removed the untracked cockpit frame asset path so the shipped build does not depend on those extra HUD images.
+
+### Verified
+
+- `flutter analyze`
+- `flutter test -r compact`
+- `flutter test tool/capture_playing_view_test.dart --update-goldens`
+- `flutter run -d macos --no-resident`
+
 ## [0.1.0] - 2026-03-13
 
 ### Added

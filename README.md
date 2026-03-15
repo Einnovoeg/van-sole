@@ -13,8 +13,8 @@ Van Solè is a cross-platform spacefaring action RPG built with Flutter.
 
 ## Release
 
-- Current release: `v0.1.0`
-- Build version: `0.1.0+1`
+- Current release: `v0.1.1`
+- Build version: `0.1.1+2`
 - Change history: see `CHANGELOG.md`
 - Release notes: see `RELEASE_NOTES.md`
 

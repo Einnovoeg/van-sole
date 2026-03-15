@@ -12,9 +12,8 @@ void main() async {
 
 // The live game is composed inside a fixed 320x200 cockpit frame and then
 // scaled up, which keeps the UI layout stable across desktop and mobile sizes.
-const String _releaseVersion = '0.1.0';
+const String _releaseVersion = '0.1.1';
 
-const Size _dosFrameSize = Size(320, 200);
 const Rect _dosViewportRect = Rect.fromLTWH(0, 0, 224, 190);
 const Rect _dosViewportInnerRect = Rect.fromLTWH(2, 2, 220, 186);
 const Rect _dosPanelRect = Rect.fromLTWH(225, 0, 95, 200);
@@ -42,6 +41,24 @@ class VanSoleApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: scheme,
         scaffoldBackgroundColor: Colors.black,
+        tooltipTheme: TooltipThemeData(
+          waitDuration: const Duration(milliseconds: 250),
+          showDuration: const Duration(seconds: 4),
+          preferBelow: false,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0B1520).withValues(alpha: 0.96),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF34E7C5).withValues(alpha: 0.3),
+            ),
+          ),
+          textStyle: const TextStyle(
+            color: Color(0xFFF2F7FB),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         textTheme: const TextTheme(
           headlineMedium: TextStyle(
             fontWeight: FontWeight.w700,
@@ -526,31 +543,45 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          FilledButton.tonal(
-                            key: const Key('start-campaign-button'),
-                            onPressed: _sessionMode == SessionMode.title
-                                ? _startNewCampaign
-                                : _resumePlay,
-                            child: Text(
-                              _sessionMode == SessionMode.title
-                                  ? 'Start Campaign'
-                                  : 'Resume (Esc)',
+                          _withTooltip(
+                            _sessionMode == SessionMode.title
+                                ? 'Start a new campaign.'
+                                : 'Return to the live flight view.',
+                            FilledButton.tonal(
+                              key: const Key('start-campaign-button'),
+                              onPressed: _sessionMode == SessionMode.title
+                                  ? _startNewCampaign
+                                  : _resumePlay,
+                              child: Text(
+                                _sessionMode == SessionMode.title
+                                    ? 'Start Campaign'
+                                    : 'Resume (Esc)',
+                              ),
                             ),
                           ),
-                          OutlinedButton(
-                            onPressed: _quickSaveCode == null
-                                ? null
-                                : _quickLoad,
-                            child: const Text('Load Quick Save (L)'),
+                          _withTooltip(
+                            'Load the current quick-save slot.',
+                            OutlinedButton(
+                              onPressed: _quickSaveCode == null
+                                  ? null
+                                  : _quickLoad,
+                              child: const Text('Load Quick Save (L)'),
+                            ),
                           ),
-                          OutlinedButton(
-                            onPressed: _quickSave,
-                            child: const Text('Quick Save (K)'),
+                          _withTooltip(
+                            'Write the current run into the quick-save slot.',
+                            OutlinedButton(
+                              onPressed: _quickSave,
+                              child: const Text('Quick Save (K)'),
+                            ),
                           ),
                           if (_sessionMode == SessionMode.paused)
-                            OutlinedButton(
-                              onPressed: _returnToTitle,
-                              child: const Text('Return to Title (Q)'),
+                            _withTooltip(
+                              'Leave the current session and go back to the title screen.',
+                              OutlinedButton(
+                                onPressed: _returnToTitle,
+                                child: const Text('Return to Title (Q)'),
+                              ),
                             ),
                         ],
                       ),
@@ -1164,13 +1195,16 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
                         ? 0
                         : 8,
                   ),
-                  child: FilledButton.tonal(
-                    onPressed: () =>
-                        _mutateGame(() => _game.chooseDialogueOption(i)),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${i + 1}. ${_game.activeEncounter!.options[i].label}',
+                  child: _withTooltip(
+                    'Send response ${i + 1} to the open comms channel.',
+                    FilledButton.tonal(
+                      onPressed: () =>
+                          _mutateGame(() => _game.chooseDialogueOption(i)),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${i + 1}. ${_game.activeEncounter!.options[i].label}',
+                        ),
                       ),
                     ),
                   ),
@@ -1221,33 +1255,48 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  FilledButton.tonal(
-                    onPressed: _game.canAcceptDockContract
-                        ? () => _mutateGame(_game.tryAcceptDockContract)
-                        : null,
-                    child: const Text('Accept (F)'),
+                  _withTooltip(
+                    'Accept the current station contract.',
+                    FilledButton.tonal(
+                      onPressed: _game.canAcceptDockContract
+                          ? () => _mutateGame(_game.tryAcceptDockContract)
+                          : null,
+                      child: const Text('Accept (F)'),
+                    ),
                   ),
-                  FilledButton.tonal(
-                    onPressed: _game.canDeliverDockContract
-                        ? () => _mutateGame(_game.tryDeliverDockContract)
-                        : null,
-                    child: const Text('Deliver (R)'),
+                  _withTooltip(
+                    'Deliver the active contract cargo.',
+                    FilledButton.tonal(
+                      onPressed: _game.canDeliverDockContract
+                          ? () => _mutateGame(_game.tryDeliverDockContract)
+                          : null,
+                      child: const Text('Deliver (R)'),
+                    ),
                   ),
-                  FilledButton.tonal(
-                    onPressed: _game.canRepairHull
-                        ? () => _mutateGame(_game.repairHull)
-                        : null,
-                    child: const Text('Repair 40 cr'),
+                  _withTooltip(
+                    'Repair ship hull damage for 40 credits.',
+                    FilledButton.tonal(
+                      onPressed: _game.canRepairHull
+                          ? () => _mutateGame(_game.repairHull)
+                          : null,
+                      child: const Text('Repair 40 cr'),
+                    ),
                   ),
-                  FilledButton.tonal(
-                    onPressed: _game.canRefuel
-                        ? () => _mutateGame(_game.refuel)
-                        : null,
-                    child: const Text('Refuel 20 cr'),
+                  _withTooltip(
+                    'Refill fuel reserves for 20 credits.',
+                    FilledButton.tonal(
+                      onPressed: _game.canRefuel
+                          ? () => _mutateGame(_game.refuel)
+                          : null,
+                      child: const Text('Refuel 20 cr'),
+                    ),
                   ),
-                  OutlinedButton(
-                    onPressed: () => _mutateGame(_game.toggleDocking),
-                    child: const Text('Undock (E)'),
+                  _withTooltip(
+                    'Leave the station and return to open flight.',
+                    OutlinedButton(
+                      onPressed: () => _mutateGame(_game.toggleDocking),
+                      child: const Text('Undock (E)'),
+                    ),
                   ),
                 ],
               ),
@@ -1279,29 +1328,32 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
               style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: _saveCodeController,
-              minLines: 2,
-              maxLines: 4,
-              style: const TextStyle(
-                fontSize: 12,
-                fontFamilyFallback: ['Menlo', 'Monaco', 'Courier New'],
-              ),
-              decoration: InputDecoration(
-                hintText: 'Save code (JSON)',
-                isDense: true,
-                filled: true,
-                fillColor: const Color(0xFF0F1721),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.08),
-                  ),
+            _withTooltip(
+              'Paste a save code here to import a run, or inspect the exported quick-save payload.',
+              TextField(
+                controller: _saveCodeController,
+                minLines: 2,
+                maxLines: 4,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontFamilyFallback: ['Menlo', 'Monaco', 'Courier New'],
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.08),
+                decoration: InputDecoration(
+                  hintText: 'Save code (JSON)',
+                  isDense: true,
+                  filled: true,
+                  fillColor: const Color(0xFF0F1721),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
                   ),
                 ),
               ),
@@ -1311,25 +1363,40 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
               spacing: 8,
               runSpacing: 8,
               children: [
-                FilledButton.tonal(
-                  onPressed: () => _copySaveCode(),
-                  child: const Text('Copy Save'),
+                _withTooltip(
+                  'Export the current run and copy the save code to the clipboard.',
+                  FilledButton.tonal(
+                    onPressed: () => _copySaveCode(),
+                    child: const Text('Copy Save'),
+                  ),
                 ),
-                FilledButton.tonal(
-                  onPressed: () => _pasteSaveCode(),
-                  child: const Text('Paste'),
+                _withTooltip(
+                  'Paste a save code from the clipboard into the field.',
+                  FilledButton.tonal(
+                    onPressed: () => _pasteSaveCode(),
+                    child: const Text('Paste'),
+                  ),
                 ),
-                FilledButton.tonal(
-                  onPressed: _loadFromSaveField,
-                  child: const Text('Load'),
+                _withTooltip(
+                  'Import the save code currently in the field.',
+                  FilledButton.tonal(
+                    onPressed: _loadFromSaveField,
+                    child: const Text('Load'),
+                  ),
                 ),
-                OutlinedButton(
-                  onPressed: _quickSave,
-                  child: const Text('Quick Save'),
+                _withTooltip(
+                  'Update the in-memory quick-save slot.',
+                  OutlinedButton(
+                    onPressed: _quickSave,
+                    child: const Text('Quick Save'),
+                  ),
                 ),
-                OutlinedButton(
-                  onPressed: _quickLoad,
-                  child: const Text('Quick Load'),
+                _withTooltip(
+                  'Restore the current quick-save slot.',
+                  OutlinedButton(
+                    onPressed: _quickLoad,
+                    child: const Text('Quick Load'),
+                  ),
                 ),
               ],
             ),
@@ -1437,21 +1504,7 @@ class _CockpitSurface extends StatelessWidget {
     return ColoredBox(
       color: Colors.black,
       child: SizedBox.expand(
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: SizedBox(
-            width: _dosFrameSize.width,
-            height: _dosFrameSize.height,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                CustomPaint(
-                  painter: Sector3DPainter(game, drawLegacyHud: false),
-                ),
-              ],
-            ),
-          ),
-        ),
+        child: CustomPaint(painter: Sector3DPainter(game, drawLegacyHud: false)),
       ),
     );
   }
@@ -1465,6 +1518,10 @@ String _distanceKm(double worldUnits) {
     return '${km.round()} km';
   }
   return '${km.toStringAsFixed(1)} km';
+}
+
+Widget _withTooltip(String message, Widget child) {
+  return Tooltip(message: message, child: child);
 }
 
 enum SessionMode { title, playing, paused }
@@ -1485,33 +1542,37 @@ class _TouchControls extends StatelessWidget {
   Widget _holdButton({
     required IconData icon,
     required String label,
+    required String tooltip,
     required VoidCallback onDown,
     required VoidCallback onUp,
     Color? color,
   }) {
-    return Listener(
-      onPointerDown: (_) => onDown(),
-      onPointerUp: (_) => onUp(),
-      onPointerCancel: (_) => onUp(),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: (color ?? const Color(0xFF101B28)).withValues(alpha: 0.88),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        ),
-        child: SizedBox(
-          width: 60,
-          height: 60,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: Colors.white),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: const TextStyle(fontSize: 10, color: Colors.white70),
-              ),
-            ],
+    return _withTooltip(
+      tooltip,
+      Listener(
+        onPointerDown: (_) => onDown(),
+        onPointerUp: (_) => onUp(),
+        onPointerCancel: (_) => onUp(),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: (color ?? const Color(0xFF101B28)).withValues(alpha: 0.88),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: SizedBox(
+            width: 60,
+            height: 60,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 18, color: Colors.white),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 10, color: Colors.white70),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1530,6 +1591,7 @@ class _TouchControls extends StatelessWidget {
             _holdButton(
               icon: Icons.keyboard_arrow_up_rounded,
               label: 'Up',
+              tooltip: 'Apply forward thrust.',
               onDown: () => onAction(VirtualAction.up, true),
               onUp: () => onAction(VirtualAction.up, false),
             ),
@@ -1540,6 +1602,7 @@ class _TouchControls extends StatelessWidget {
                 _holdButton(
                   icon: Icons.keyboard_arrow_left_rounded,
                   label: 'Left',
+                  tooltip: 'Yaw the ship to port.',
                   onDown: () => onAction(VirtualAction.left, true),
                   onUp: () => onAction(VirtualAction.left, false),
                 ),
@@ -1547,6 +1610,7 @@ class _TouchControls extends StatelessWidget {
                 _holdButton(
                   icon: Icons.keyboard_arrow_down_rounded,
                   label: 'Down',
+                  tooltip: 'Apply reverse thrust.',
                   onDown: () => onAction(VirtualAction.down, true),
                   onUp: () => onAction(VirtualAction.down, false),
                 ),
@@ -1554,6 +1618,7 @@ class _TouchControls extends StatelessWidget {
                 _holdButton(
                   icon: Icons.keyboard_arrow_right_rounded,
                   label: 'Right',
+                  tooltip: 'Yaw the ship to starboard.',
                   onDown: () => onAction(VirtualAction.right, true),
                   onUp: () => onAction(VirtualAction.right, false),
                 ),
@@ -1571,6 +1636,7 @@ class _TouchControls extends StatelessWidget {
                 _holdButton(
                   icon: Icons.bolt_rounded,
                   label: 'Boost',
+                  tooltip: 'Spend energy for a forward speed boost.',
                   color: const Color(0xFF3F2A11),
                   onDown: () => onAction(VirtualAction.boost, true),
                   onUp: () => onAction(VirtualAction.boost, false),
@@ -1579,6 +1645,7 @@ class _TouchControls extends StatelessWidget {
                 _holdButton(
                   icon: Icons.flash_on_rounded,
                   label: 'Fire',
+                  tooltip: 'Fire the primary weapons.',
                   color: const Color(0xFF30111A),
                   onDown: () => onAction(VirtualAction.fire, true),
                   onUp: () => onAction(VirtualAction.fire, false),
@@ -1586,16 +1653,22 @@ class _TouchControls extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            FilledButton.tonalIcon(
-              onPressed: onDockTap,
-              icon: const Icon(Icons.meeting_room_outlined),
-              label: const Text('Dock'),
+            _withTooltip(
+              'Dock or undock when you are in range of a station.',
+              FilledButton.tonalIcon(
+                onPressed: onDockTap,
+                icon: const Icon(Icons.meeting_room_outlined),
+                label: const Text('Dock'),
+              ),
             ),
             const SizedBox(height: 8),
-            FilledButton.tonalIcon(
-              onPressed: onJumpTap,
-              icon: const Icon(Icons.double_arrow_rounded),
-              label: const Text('Jump'),
+            _withTooltip(
+              'Trigger sector transit at a jump gate.',
+              FilledButton.tonalIcon(
+                onPressed: onJumpTap,
+                icon: const Icon(Icons.double_arrow_rounded),
+                label: const Text('Jump'),
+              ),
             ),
           ],
         ),
@@ -1826,7 +1899,11 @@ class _PowerRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          _StepperButton(icon: Icons.remove, onTap: () => onAdjust(-1)),
+          _StepperButton(
+            icon: Icons.remove,
+            tooltip: 'Reduce ${channel.label.toLowerCase()} allocation.',
+            onTap: () => onAdjust(-1),
+          ),
           SizedBox(
             width: 32,
             child: Text(
@@ -1835,7 +1912,11 @@ class _PowerRow extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
-          _StepperButton(icon: Icons.add, onTap: () => onAdjust(1)),
+          _StepperButton(
+            icon: Icons.add,
+            tooltip: 'Increase ${channel.label.toLowerCase()} allocation.',
+            onTap: () => onAdjust(1),
+          ),
         ],
       ),
     );
@@ -1898,9 +1979,12 @@ class _UpgradeRow extends StatelessWidget {
                 ),
               )
             else
-              FilledButton.tonal(
-                onPressed: onPressed,
-                child: Text('Upgrade $cost'),
+              _withTooltip(
+                'Spend $cost credits to upgrade $label.',
+                FilledButton.tonal(
+                  onPressed: onPressed,
+                  child: Text('Upgrade $cost'),
+                ),
               ),
           ],
         ),
@@ -1910,25 +1994,33 @@ class _UpgradeRow extends StatelessWidget {
 }
 
 class _StepperButton extends StatelessWidget {
-  const _StepperButton({required this.icon, required this.onTap});
+  const _StepperButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
 
   final IconData icon;
+  final String tooltip;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: Ink(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: const Color(0xFF132131),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+    return _withTooltip(
+      tooltip,
+      InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Ink(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: const Color(0xFF132131),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Icon(icon, size: 16),
         ),
-        child: Icon(icon, size: 16),
       ),
     );
   }
@@ -2112,24 +2204,30 @@ class _MarketPanel extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton.tonal(
-                      onPressed: game.canBuyCommodity(commodity.id)
-                          ? () => onBuy(commodity.id)
-                          : null,
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
+                    _withTooltip(
+                      'Buy one unit of ${commodity.name}.',
+                      FilledButton.tonal(
+                        onPressed: game.canBuyCommodity(commodity.id)
+                            ? () => onBuy(commodity.id)
+                            : null,
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: const Text('Buy'),
                       ),
-                      child: const Text('Buy'),
                     ),
                     const SizedBox(width: 6),
-                    OutlinedButton(
-                      onPressed: game.canSellCommodity(commodity.id)
-                          ? () => onSell(commodity.id)
-                          : null,
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
+                    _withTooltip(
+                      'Sell one unit of ${commodity.name}.',
+                      OutlinedButton(
+                        onPressed: game.canSellCommodity(commodity.id)
+                            ? () => onSell(commodity.id)
+                            : null,
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: const Text('Sell'),
                       ),
-                      child: const Text('Sell'),
                     ),
                   ],
                 );
@@ -4240,7 +4338,7 @@ class VanSoleGame {
     } else {
       playerPosition = initial
           ? switch (index) {
-              0 => const Offset(1720, 1840),
+              0 => const Offset(1640, 1320),
               1 => const Offset(2140, 1760),
               _ => const Offset(1960, 1720),
             }
@@ -5208,30 +5306,19 @@ class Sector3DPainter extends CustomPainter {
     if (size.width < 180 || size.height < 110) {
       return;
     }
-    const sceneSize = Size(320, 200);
-    final scale = math.min(
-      size.width / sceneSize.width,
-      size.height / sceneSize.height,
-    );
-    final fittedSize = Size(sceneSize.width * scale, sceneSize.height * scale);
-    final origin = Offset(
-      (size.width - fittedSize.width) / 2,
-      (size.height - fittedSize.height) / 2,
-    );
+    final sceneSize = size;
     canvas.save();
-    canvas.translate(origin.dx, origin.dy);
-    canvas.scale(scale, scale);
 
     final rect = Offset.zero & sceneSize;
     final viewportRect = _viewportRectFor(sceneSize);
     final viewportInner = sceneSize.width <= 500
         ? _dosViewportInnerRect
-        : viewportRect.deflate(2);
+        : viewportRect.deflate(drawLegacyHud ? 2 : 8);
     final center = Offset(
       viewportInner.center.dx,
-      viewportInner.top + viewportInner.height * 0.58,
+      viewportInner.top + viewportInner.height * (drawLegacyHud ? 0.58 : 0.56),
     );
-    final focal = viewportInner.shortestSide * 1.02;
+    final focal = viewportInner.shortestSide * (drawLegacyHud ? 1.02 : 1.22);
     final sinFacing = math.sin(game.playerFacing);
     final cosFacing = math.cos(game.playerFacing);
     final lightDir = _Vec3(
@@ -5241,6 +5328,14 @@ class Sector3DPainter extends CustomPainter {
     ).normalized();
     canvas.drawRect(rect, Paint()..color = const Color(0xFF010205));
     canvas.drawRect(viewportInner, Paint()..color = const Color(0xFF000104));
+    final speedFactor = (game.playerVelocity.distance / 360)
+        .clamp(0.0, 1.0)
+        .toDouble();
+    _drawDeepSpaceBackdrop(
+      canvas,
+      viewportInner,
+      speedFactor: speedFactor,
+    );
     canvas.drawRect(
       viewportInner,
       Paint()
@@ -5253,12 +5348,6 @@ class Sector3DPainter extends CustomPainter {
           ],
         ).createShader(viewportInner),
     );
-
-    final speedFactor = (game.playerVelocity.distance / 360)
-        .clamp(0.0, 1.0)
-        .toDouble();
-    // Keep the fixed DOS-era cockpit composition, but only fall back to
-    // sprite-only rendering on extremely small displays.
     final dosSpriteStyle = drawLegacyHud && size.width < 220;
     final horizonCenter = viewportInner.center;
     final reticleCenter = viewportInner.center;
@@ -5956,13 +6045,6 @@ class Sector3DPainter extends CustomPainter {
       if (game.activeEncounter != null) {
         _drawEncounterCockpitOverlay(canvas, sceneSize);
       }
-      _drawControlPanelDosCompact(
-        canvas,
-        sceneSize,
-        target: targetSnapshot,
-        reticleCenter: reticleCenter,
-      );
-      _drawCommandStrip(canvas, sceneSize, targetSnapshot);
     }
     _drawDamageIndicator(canvas, reticleCenter);
 
@@ -6064,6 +6146,15 @@ class Sector3DPainter extends CustomPainter {
   }
 
   Rect _viewportRectFor(Size size) {
+    if (!drawLegacyHud) {
+      final inset = size.width <= 500 ? 4.0 : 14.0;
+      return Rect.fromLTWH(
+        inset,
+        inset,
+        size.width - inset * 2,
+        size.height - inset * 2,
+      );
+    }
     if (size.width <= 500) {
       return _dosViewportRect;
     }
@@ -6536,6 +6627,121 @@ class Sector3DPainter extends CustomPainter {
     );
   }
 
+  void _drawDeepSpaceBackdrop(
+    Canvas canvas,
+    Rect viewportRect, {
+    required double speedFactor,
+  }) {
+    final palette = switch (game.sectorIndex % 4) {
+      0 => (
+        top: const Color(0xFF08101B),
+        mid: const Color(0xFF10223B),
+        glow: const Color(0xFF36B6D9),
+        accent: const Color(0xFF54F0C8),
+      ),
+      1 => (
+        top: const Color(0xFF0C1320),
+        mid: const Color(0xFF1B203F),
+        glow: const Color(0xFF7283FF),
+        accent: const Color(0xFFFF9E6B),
+      ),
+      2 => (
+        top: const Color(0xFF090F18),
+        mid: const Color(0xFF1A2838),
+        glow: const Color(0xFF44C7E8),
+        accent: const Color(0xFFD7F06D),
+      ),
+      _ => (
+        top: const Color(0xFF090E17),
+        mid: const Color(0xFF221B34),
+        glow: const Color(0xFF7E6BFF),
+        accent: const Color(0xFF4DD6FF),
+      ),
+    };
+    canvas.drawRect(
+      viewportRect,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            palette.top,
+            palette.mid,
+            const Color(0xFF010205),
+          ],
+          stops: const [0.0, 0.56, 1.0],
+        ).createShader(viewportRect),
+    );
+
+    final drift = game._clock * 0.08;
+    final nebulae = <({Alignment anchor, Size scale, Color color, double alpha})>[
+      (
+        anchor: Alignment(-0.72 + math.sin(drift) * 0.04, -0.58),
+        scale: const Size(0.58, 0.42),
+        color: palette.glow,
+        alpha: 0.16,
+      ),
+      (
+        anchor: Alignment(0.58, -0.18 + math.cos(drift * 1.2) * 0.05),
+        scale: const Size(0.64, 0.46),
+        color: palette.accent,
+        alpha: 0.12,
+      ),
+      (
+        anchor: Alignment(-0.08, 0.22 + math.sin(drift * 0.8) * 0.04),
+        scale: const Size(0.72, 0.34),
+        color: Color.lerp(palette.glow, palette.accent, 0.5)!,
+        alpha: 0.08,
+      ),
+    ];
+    for (final nebula in nebulae) {
+      final center = Offset(
+        viewportRect.left + (nebula.anchor.x + 1) * 0.5 * viewportRect.width,
+        viewportRect.top + (nebula.anchor.y + 1) * 0.5 * viewportRect.height,
+      );
+      final nebulaRect = Rect.fromCenter(
+        center: center,
+        width: viewportRect.width * nebula.scale.width,
+        height: viewportRect.height * nebula.scale.height,
+      );
+      canvas.drawOval(
+        nebulaRect,
+        Paint()
+          ..color = nebula.color.withValues(alpha: nebula.alpha)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 42),
+      );
+    }
+
+    final dustPaint = Paint()..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 18; i++) {
+      final fx =
+          (0.12 +
+                  ((math.sin(i * 2.13 + game.sectorIndex) + 1) * 0.5) * 0.76 +
+                  drift * 0.015 * (i.isEven ? 1 : -1)) %
+              1.0;
+      final fy = 0.1 + ((math.cos(i * 1.37 + game.sectorIndex * 0.4) + 1) * 0.5) * 0.8;
+      final point = Offset(
+        viewportRect.left + fx * viewportRect.width,
+        viewportRect.top + fy * viewportRect.height,
+      );
+      final radius = 0.7 + (i % 3) * 0.35;
+      dustPaint.color = Color.lerp(
+        palette.accent,
+        Colors.white,
+        0.38,
+      )!.withValues(alpha: 0.1 + (i % 4) * 0.025);
+      canvas.drawCircle(point, radius, dustPaint);
+      if (speedFactor > 0.22) {
+        final streak = (4 + speedFactor * 16 + i % 5).toDouble();
+        canvas.drawLine(
+          point - Offset(0, streak),
+          point,
+          dustPaint..strokeWidth = radius,
+        );
+      }
+    }
+  }
+
   void _drawBackgroundPlanets(
     Canvas canvas,
     Rect viewportRect, {
@@ -6746,9 +6952,9 @@ class Sector3DPainter extends CustomPainter {
     Offset center, {
     required double facing,
   }) {
-    const focal = 92.0;
+    const focal = 108.0;
     final yaw = facing - math.pi / 2;
-    final origin = const _Vec3(0, -4, 178);
+    final origin = const _Vec3(0, -10, 162);
     final lightDir = _Vec3(-0.42, 0.82, -0.36).normalized();
     _drawMesh(
       canvas,
@@ -6762,6 +6968,7 @@ class Sector3DPainter extends CustomPainter {
       ambient: 0.28,
       emissiveBoost: 0.05,
       edgeAlpha: 0.24,
+      scale: 1.18,
     );
 
     for (final local in const <_Vec3>[
@@ -6778,6 +6985,14 @@ class Sector3DPainter extends CustomPainter {
       if (thruster == null) {
         continue;
       }
+      canvas.drawLine(
+        thruster.screen + const Offset(0, 4),
+        thruster.screen + const Offset(0, 28),
+        Paint()
+          ..color = const Color(0xFFFFA04A).withValues(alpha: 0.16)
+          ..strokeWidth = (2.2 + thruster.scale * 1.4).clamp(1.8, 4.2)
+          ..strokeCap = StrokeCap.round,
+      );
       canvas.drawCircle(
         thruster.screen,
         (3.2 + thruster.scale * 3.8).clamp(2.4, 7.8),
@@ -7065,7 +7280,7 @@ class Sector3DPainter extends CustomPainter {
       ambient: 0.22,
       emissiveBoost: 0.06,
       edgeAlpha: 0.24,
-      scale: tracked ? 0.48 : 0.42,
+      scale: tracked ? 0.58 : 0.5,
     );
 
     for (final side in const <double>[-1, 1]) {
@@ -9294,31 +9509,43 @@ class Sector3DPainter extends CustomPainter {
     canvas.drawRect(
       rect,
       Paint()
-        ..blendMode = BlendMode.softLight
+        ..blendMode = BlendMode.screen
         ..shader = RadialGradient(
-          center: const Alignment(0, -0.2),
-          radius: 1.0,
+          center: const Alignment(0, -0.14),
+          radius: 1.08,
           colors: [
-            const Color(0xFF305A82).withValues(alpha: 0.09),
+            const Color(0xFF7AC7FF).withValues(alpha: 0.1),
+            const Color(0xFF27486E).withValues(alpha: 0.04),
             Colors.transparent,
           ],
+          stops: const [0.0, 0.38, 1.0],
         ).createShader(rect),
     );
 
-    final scanPaint = Paint()..strokeWidth = 1;
-    for (double y = rect.top; y < rect.bottom; y += 4) {
-      final pulse =
-          0.5 + 0.5 * math.sin((y - rect.top) * 0.04 + game._clock * 5);
-      scanPaint.color = const Color(
-        0xFFC8D9E8,
-      ).withValues(alpha: 0.008 + 0.01 * pulse);
-      canvas.drawLine(Offset(rect.left, y), Offset(rect.right, y), scanPaint);
+    if (speedFactor > 0.18) {
+      final streakPaint = Paint()
+        ..strokeCap = StrokeCap.round
+        ..blendMode = BlendMode.screen;
+      for (var i = 0; i < 12; i++) {
+        final t = i / 11;
+        final x = rect.left + rect.width * (0.14 + t * 0.72);
+        final amplitude = rect.height * 0.1 * math.sin(game._clock * 0.9 + i);
+        final top = Offset(x, rect.top + rect.height * 0.22 + amplitude);
+        final bottom = Offset(x, rect.bottom - rect.height * 0.08);
+        streakPaint
+          ..strokeWidth = 0.8 + speedFactor * 1.8
+          ..color = const Color(0xFF7DD3FC).withValues(
+            alpha: 0.018 + speedFactor * 0.05,
+          );
+        canvas.drawLine(top, bottom, streakPaint);
+      }
     }
 
     final speedBloom = (0.03 + speedFactor * 0.13).clamp(0.03, 0.18).toDouble();
     canvas.drawRect(
       rect,
       Paint()
+        ..blendMode = BlendMode.plus
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -9339,10 +9566,10 @@ class Sector3DPainter extends CustomPainter {
           radius: 1.08,
           colors: [
             Colors.transparent,
-            Colors.black.withValues(alpha: 0.2),
-            Colors.black.withValues(alpha: 0.46),
+            Colors.black.withValues(alpha: 0.12),
+            Colors.black.withValues(alpha: 0.34),
           ],
-          stops: const [0.56, 0.84, 1.0],
+          stops: const [0.62, 0.86, 1.0],
         ).createShader(rect),
     );
   }
