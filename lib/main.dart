@@ -142,15 +142,24 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
     }
     switch (cue) {
       case GameAudioCue.fire:
+        HapticFeedback.lightImpact();
+        SystemSound.play(SystemSoundType.click);
+        break;
       case GameAudioCue.contract:
       case GameAudioCue.comms:
         SystemSound.play(SystemSoundType.click);
         break;
       case GameAudioCue.hit:
+        HapticFeedback.mediumImpact();
+        SystemSound.play(SystemSoundType.alert);
+        break;
       case GameAudioCue.warning:
         SystemSound.play(SystemSoundType.alert);
         break;
       case GameAudioCue.dock:
+        HapticFeedback.lightImpact();
+        SystemSound.play(SystemSoundType.click);
+        break;
       case GameAudioCue.jump:
         SystemSound.play(SystemSoundType.click);
         break;
@@ -1339,6 +1348,7 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
                   fontFamilyFallback: ['Menlo', 'Monaco', 'Courier New'],
                 ),
                 decoration: InputDecoration(
+                  labelText: 'Save Code',
                   hintText: 'Save code (JSON)',
                   isDense: true,
                   filled: true,
@@ -2010,7 +2020,10 @@ class _StepperButton extends StatelessWidget {
       tooltip,
       InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
         child: Ink(
           width: 28,
           height: 28,
@@ -2205,7 +2218,11 @@ class _MarketPanel extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     _withTooltip(
-                      'Buy one unit of ${commodity.name}.',
+                      game.canBuyCommodity(commodity.id)
+                          ? 'Buy one unit of ${commodity.name}.'
+                          : (game.credits < buy
+                              ? 'Insufficient credits to buy ${commodity.name}.'
+                              : 'Cargo hold is full.'),
                       FilledButton.tonal(
                         onPressed: game.canBuyCommodity(commodity.id)
                             ? () => onBuy(commodity.id)
@@ -2218,7 +2235,9 @@ class _MarketPanel extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     _withTooltip(
-                      'Sell one unit of ${commodity.name}.',
+                      game.canSellCommodity(commodity.id)
+                          ? 'Sell one unit of ${commodity.name}.'
+                          : 'No ${commodity.name} cargo available to sell.',
                       OutlinedButton(
                         onPressed: game.canSellCommodity(commodity.id)
                             ? () => onSell(commodity.id)
