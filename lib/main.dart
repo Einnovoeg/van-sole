@@ -142,17 +142,23 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
     }
     switch (cue) {
       case GameAudioCue.fire:
+        SystemSound.play(SystemSoundType.click);
+        HapticFeedback.lightImpact();
+        break;
       case GameAudioCue.contract:
       case GameAudioCue.comms:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.selectionClick();
         break;
       case GameAudioCue.hit:
       case GameAudioCue.warning:
         SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.mediumImpact();
         break;
       case GameAudioCue.dock:
       case GameAudioCue.jump:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.heavyImpact();
         break;
     }
   }
@@ -1550,28 +1556,35 @@ class _TouchControls extends StatelessWidget {
     return _withTooltip(
       tooltip,
       Listener(
-        onPointerDown: (_) => onDown(),
+        onPointerDown: (_) {
+          HapticFeedback.selectionClick();
+          onDown();
+        },
         onPointerUp: (_) => onUp(),
         onPointerCancel: (_) => onUp(),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: (color ?? const Color(0xFF101B28)).withValues(alpha: 0.88),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-          ),
-          child: SizedBox(
-            width: 60,
-            height: 60,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 18, color: Colors.white),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 10, color: Colors.white70),
-                ),
-              ],
+        child: Semantics(
+          label: tooltip,
+          button: true,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: (color ?? const Color(0xFF101B28)).withValues(alpha: 0.88),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: SizedBox(
+              width: 60,
+              height: 60,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 18, color: Colors.white),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    style: const TextStyle(fontSize: 10, color: Colors.white70),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
