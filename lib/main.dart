@@ -145,14 +145,17 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
       case GameAudioCue.contract:
       case GameAudioCue.comms:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.selectionClick();
         break;
       case GameAudioCue.hit:
       case GameAudioCue.warning:
         SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.mediumImpact();
         break;
       case GameAudioCue.dock:
       case GameAudioCue.jump:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.selectionClick();
         break;
     }
   }
@@ -549,9 +552,12 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
                                 : 'Return to the live flight view.',
                             FilledButton.tonal(
                               key: const Key('start-campaign-button'),
-                              onPressed: _sessionMode == SessionMode.title
-                                  ? _startNewCampaign
-                                  : _resumePlay,
+                              onPressed: () {
+                                HapticFeedback.mediumImpact();
+                                _sessionMode == SessionMode.title
+                                    ? _startNewCampaign()
+                                    : _resumePlay();
+                              },
                               child: Text(
                                 _sessionMode == SessionMode.title
                                     ? 'Start Campaign'
@@ -1550,7 +1556,10 @@ class _TouchControls extends StatelessWidget {
     return _withTooltip(
       tooltip,
       Listener(
-        onPointerDown: (_) => onDown(),
+        onPointerDown: (_) {
+          onDown();
+          HapticFeedback.lightImpact();
+        },
         onPointerUp: (_) => onUp(),
         onPointerCancel: (_) => onUp(),
         child: DecoratedBox(
