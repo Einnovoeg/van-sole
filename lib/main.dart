@@ -142,17 +142,26 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
     }
     switch (cue) {
       case GameAudioCue.fire:
+        SystemSound.play(SystemSoundType.click);
+        HapticFeedback.lightImpact();
+        break;
       case GameAudioCue.contract:
       case GameAudioCue.comms:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.selectionClick();
         break;
       case GameAudioCue.hit:
+        SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.mediumImpact();
+        break;
       case GameAudioCue.warning:
         SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.selectionClick();
         break;
       case GameAudioCue.dock:
       case GameAudioCue.jump:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.mediumImpact();
         break;
     }
   }
@@ -1549,10 +1558,17 @@ class _TouchControls extends StatelessWidget {
   }) {
     return _withTooltip(
       tooltip,
-      Listener(
-        onPointerDown: (_) => onDown(),
-        onPointerUp: (_) => onUp(),
-        onPointerCancel: (_) => onUp(),
+      Semantics(
+        button: true,
+        label: label,
+        hint: tooltip,
+        child: Listener(
+          onPointerDown: (_) {
+            HapticFeedback.selectionClick();
+            onDown();
+          },
+          onPointerUp: (_) => onUp(),
+          onPointerCancel: (_) => onUp(),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: (color ?? const Color(0xFF101B28)).withValues(alpha: 0.88),
@@ -1576,6 +1592,7 @@ class _TouchControls extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -2008,10 +2025,16 @@ class _StepperButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return _withTooltip(
       tooltip,
-      InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Ink(
+      Semantics(
+        button: true,
+        label: tooltip,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          child: Ink(
           width: 28,
           height: 28,
           decoration: BoxDecoration(
@@ -2022,6 +2045,7 @@ class _StepperButton extends StatelessWidget {
           child: Icon(icon, size: 16),
         ),
       ),
+    ),
     );
   }
 }
