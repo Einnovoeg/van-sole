@@ -1,0 +1,3 @@
+## 2026-03-19 - Tactile Feedback and Semantic Redundancy
+**Learning:** Standard Flutter `Tooltip` widgets already provide semantic labels for screen readers. Explicitly adding a `Semantics` widget with the same label can cause redundant announcements. Additionally, integrating `HapticFeedback` into centralized event handlers (like audio cue drains) provides a consistent tactile experience across the entire app.
+**Action:** Always check if a parent or helper widget (like one wrapping a standard `Tooltip`) already provides semantic information before adding a `Semantics` widget. Prioritize centralized event loops for cross-cutting UX concerns like haptics.
