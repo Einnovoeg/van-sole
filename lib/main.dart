@@ -142,17 +142,26 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
     }
     switch (cue) {
       case GameAudioCue.fire:
+        SystemSound.play(SystemSoundType.click);
+        HapticFeedback.lightImpact();
+        break;
       case GameAudioCue.contract:
       case GameAudioCue.comms:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.selectionClick();
         break;
       case GameAudioCue.hit:
+        SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.mediumImpact();
+        break;
       case GameAudioCue.warning:
         SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.selectionClick();
         break;
       case GameAudioCue.dock:
       case GameAudioCue.jump:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.mediumImpact();
         break;
     }
   }
@@ -2008,10 +2017,15 @@ class _StepperButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return _withTooltip(
       tooltip,
-      InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Ink(
+      Semantics(
+        button: true,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () {
+            onTap();
+            HapticFeedback.selectionClick();
+          },
+          child: Ink(
           width: 28,
           height: 28,
           decoration: BoxDecoration(
@@ -2020,6 +2034,7 @@ class _StepperButton extends StatelessWidget {
             border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: Icon(icon, size: 16),
+          ),
         ),
       ),
     );
