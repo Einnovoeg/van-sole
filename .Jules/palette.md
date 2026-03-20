@@ -1,0 +1,3 @@
+## 2025-05-14 - Haptic Feedback for Game Events and UI
+**Learning:** Integrating multi-modal feedback (haptics + audio) significantly enhances the "feel" and accessibility of a game, especially for users with hearing impairments or in noisy environments. Differentiating haptic intensity (light/medium/selectionClick) provides intuitive cues about the importance and frequency of events.
+**Action:** Always consider mapping game-critical events and UI interactions to appropriate haptic intensities (`lightImpact` for frequent actions, `mediumImpact` for significant events, `selectionClick` for UI notifications).
