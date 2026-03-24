@@ -1,0 +1,3 @@
+## 2025-01-24 - [Tactile immersion & Save field accessibility]
+**Learning:** In a high-intensity action RPG like Van Solè, visual cues can be missed during combat. Integrating haptic feedback into the existing `_drainAudioCue` system allows for a non-visual feedback layer that enhances immersion and accessibility for players with visual impairments. Also, relying on `hintText` for critical form fields like "Save Code" is poor UX because the context disappears as soon as the user starts typing; `labelText` should be used instead.
+**Action:** Always check for centralized event handlers (like audio or system sound triggers) to add global UX improvements like haptics. Prioritize `labelText` over `hintText` in TextFields to ensure persistent accessibility context.
