@@ -1528,6 +1528,99 @@ enum SessionMode { title, playing, paused }
 
 enum VirtualAction { up, down, left, right, fire, boost }
 
+class _HoldButton extends StatefulWidget {
+  const _HoldButton({
+    required this.icon,
+    required this.label,
+    required this.tooltip,
+    required this.onDown,
+    required this.onUp,
+    this.color,
+    this.isFire = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final String tooltip;
+  final VoidCallback onDown;
+  final VoidCallback onUp;
+  final Color? color;
+  final bool isFire;
+
+  @override
+  State<_HoldButton> createState() => _HoldButtonState();
+}
+
+class _HoldButtonState extends State<_HoldButton> {
+  bool _isPressed = false;
+
+  void _handleDown() {
+    setState(() => _isPressed = true);
+    widget.onDown();
+    if (widget.isFire) {
+      HapticFeedback.lightImpact();
+    } else {
+      HapticFeedback.selectionClick();
+    }
+  }
+
+  void _handleUp() {
+    if (_isPressed) {
+      setState(() => _isPressed = false);
+      widget.onUp();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _withTooltip(
+      widget.tooltip,
+      Listener(
+        onPointerDown: (_) => _handleDown(),
+        onPointerUp: (_) => _handleUp(),
+        onPointerCancel: (_) => _handleUp(),
+        child: AnimatedScale(
+          scale: _isPressed ? 0.92 : 1.0,
+          duration: const Duration(milliseconds: 50),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: (widget.color ?? const Color(0xFF101B28))
+                  .withValues(alpha: _isPressed ? 1.0 : 0.88),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: _isPressed ? 0.25 : 0.12),
+              ),
+            ),
+            child: SizedBox(
+              width: 60,
+              height: 60,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    widget.icon,
+                    size: 18,
+                    color: _isPressed ? Colors.white : Colors.white70,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: _isPressed ? Colors.white : Colors.white70,
+                      fontWeight: _isPressed ? FontWeight.w700 : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TouchControls extends StatelessWidget {
   const _TouchControls({
     required this.onAction,
@@ -1539,46 +1632,6 @@ class _TouchControls extends StatelessWidget {
   final VoidCallback onDockTap;
   final VoidCallback onJumpTap;
 
-  Widget _holdButton({
-    required IconData icon,
-    required String label,
-    required String tooltip,
-    required VoidCallback onDown,
-    required VoidCallback onUp,
-    Color? color,
-  }) {
-    return _withTooltip(
-      tooltip,
-      Listener(
-        onPointerDown: (_) => onDown(),
-        onPointerUp: (_) => onUp(),
-        onPointerCancel: (_) => onUp(),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: (color ?? const Color(0xFF101B28)).withValues(alpha: 0.88),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-          ),
-          child: SizedBox(
-            width: 60,
-            height: 60,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 18, color: Colors.white),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 10, color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -1588,7 +1641,7 @@ class _TouchControls extends StatelessWidget {
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _holdButton(
+            _HoldButton(
               icon: Icons.keyboard_arrow_up_rounded,
               label: 'Up',
               tooltip: 'Apply forward thrust.',
@@ -1599,7 +1652,7 @@ class _TouchControls extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _holdButton(
+                _HoldButton(
                   icon: Icons.keyboard_arrow_left_rounded,
                   label: 'Left',
                   tooltip: 'Yaw the ship to port.',
@@ -1607,7 +1660,7 @@ class _TouchControls extends StatelessWidget {
                   onUp: () => onAction(VirtualAction.left, false),
                 ),
                 const SizedBox(width: 8),
-                _holdButton(
+                _HoldButton(
                   icon: Icons.keyboard_arrow_down_rounded,
                   label: 'Down',
                   tooltip: 'Apply reverse thrust.',
@@ -1615,7 +1668,7 @@ class _TouchControls extends StatelessWidget {
                   onUp: () => onAction(VirtualAction.down, false),
                 ),
                 const SizedBox(width: 8),
-                _holdButton(
+                _HoldButton(
                   icon: Icons.keyboard_arrow_right_rounded,
                   label: 'Right',
                   tooltip: 'Yaw the ship to starboard.',
@@ -1633,7 +1686,7 @@ class _TouchControls extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _holdButton(
+                _HoldButton(
                   icon: Icons.bolt_rounded,
                   label: 'Boost',
                   tooltip: 'Spend energy for a forward speed boost.',
@@ -1642,11 +1695,12 @@ class _TouchControls extends StatelessWidget {
                   onUp: () => onAction(VirtualAction.boost, false),
                 ),
                 const SizedBox(width: 8),
-                _holdButton(
+                _HoldButton(
                   icon: Icons.flash_on_rounded,
                   label: 'Fire',
                   tooltip: 'Fire the primary weapons.',
                   color: const Color(0xFF30111A),
+                  isFire: true,
                   onDown: () => onAction(VirtualAction.fire, true),
                   onUp: () => onAction(VirtualAction.fire, false),
                 ),

@@ -1,0 +1,3 @@
+## 2025-05-14 - Interactive Touch Controls
+**Learning:** Virtual touch controls in mobile games benefit significantly from multi-sensory feedback (visual scaling and haptics) to compensate for the lack of physical buttons. Refactoring these into a `StatefulWidget` allows for localized state management (e.g., press animations) without triggering expensive full-screen rebuilds, ensuring high-performance feedback loops.
+**Action:** Always prefer `StatefulWidget` for interactive UI components that require micro-animations or haptics. Map haptic feedback patterns to action types: `lightImpact` for high-frequency actions (firing) and `selectionClick` for state changes or navigation.
