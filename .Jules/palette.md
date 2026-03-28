@@ -1,0 +1,7 @@
+## 2025-05-15 - Localized State for Interactive Animations
+**Learning:** In single-file Flutter architectures with complex painters (like `Sector3DPainter`), using 'StatelessWidget' helpers for interactive elements can cause expensive full-screen rebuilds if they rely on parent state for animations. Refactoring these into 'StatefulWidget' components allows for localized animation state (e.g., scale transitions, haptics) that provides higher-performance feedback without taxing the main game loop.
+**Action:** Prefer 'StatefulWidget' for localized interactive elements that require high-performance feedback (animations, haptics) to avoid expensive full-screen rebuilds in single-file Flutter architectures.
+
+## 2025-05-15 - Tactile Mapping for Game Events
+**Learning:** Haptic feedback in high-intensity action games should be mapped by significance: `lightImpact` for frequent user actions (virtual buttons), `mediumImpact` for significant world events (combat hits, docking), and `selectionClick` for UI-level notifications. Pairing these with `SystemSound` calls creates a multi-sensory confirmation layer that is particularly helpful when visual focus is divided.
+**Action:** Integrate 'HapticFeedback' (e.g., lightImpact, mediumImpact, selectionClick) to provide tactile confirmation for virtual controls and game events, especially as a non-visual feedback layer during high-intensity combat.
