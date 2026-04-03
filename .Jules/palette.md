@@ -1,0 +1,3 @@
+## 2026-04-03 - [Haptic Feedback in Flutter Web RPG]
+**Learning:** Haptic feedback in Flutter Web requires consistent integration with audio cues to provide a unified sensory experience. Discrete events like combat hits or docking feel more impactful when paired with `mediumImpact`, while sustained actions like thrusters benefit from lighter, repetitive pulses (`lightImpact`).
+**Action:** Centralize haptic feedback alongside audio triggers (e.g., in an event-driven `_drainAudioCue` pattern) to ensure tactile responses always mirror sound effects. Use `selectionClick` specifically for UI state confirmations like menu navigation or stepper adjustments to differentiate them from gameplay actions.
