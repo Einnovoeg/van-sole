@@ -142,17 +142,26 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
     }
     switch (cue) {
       case GameAudioCue.fire:
-      case GameAudioCue.contract:
-      case GameAudioCue.comms:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.lightImpact();
         break;
       case GameAudioCue.hit:
-      case GameAudioCue.warning:
         SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.mediumImpact();
         break;
       case GameAudioCue.dock:
       case GameAudioCue.jump:
         SystemSound.play(SystemSoundType.click);
+        HapticFeedback.mediumImpact();
+        break;
+      case GameAudioCue.contract:
+      case GameAudioCue.comms:
+        SystemSound.play(SystemSoundType.click);
+        HapticFeedback.selectionClick();
+        break;
+      case GameAudioCue.warning:
+        SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.selectionClick();
         break;
     }
   }
