@@ -1,0 +1,3 @@
+## 2026-04-11 - Integration of Haptic Feedback for Game Events and UI
+**Learning:** Integrating `HapticFeedback` alongside `SystemSound` in a centralized feedback loop (like `_drainAudioCue`) ensures a consistent multi-sensory experience for critical game states (firing, hits, docking). Tactile feedback on virtual controls (like power allocation steppers) significantly improves the perceived responsiveness of the UI on touch-enabled platforms.
+**Action:** Always pair audio cues with appropriate haptic patterns (light, medium, or selection click) and ensure interactive UI elements provide tactile confirmation for state changes.
