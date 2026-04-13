@@ -1510,10 +1510,13 @@ class _CockpitSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: Colors.black,
-      child: SizedBox.expand(
-        child: CustomPaint(painter: Sector3DPainter(game, drawLegacyHud: false)),
+    return Semantics(
+      label: 'Cockpit view of space',
+      child: ColoredBox(
+        color: Colors.black,
+        child: SizedBox.expand(
+          child: CustomPaint(painter: Sector3DPainter(game, drawLegacyHud: false)),
+        ),
       ),
     );
   }
@@ -2019,7 +2022,10 @@ class _StepperButton extends StatelessWidget {
       tooltip,
       InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
+        onTap: () {
+          onTap();
+          HapticFeedback.selectionClick();
+        },
         child: Ink(
           width: 28,
           height: 28,
