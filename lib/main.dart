@@ -1115,6 +1115,8 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
                 (channel) => _PowerRow(
                   channel: channel,
                   value: _game.power[channel]!,
+                  canIncrease: _game.canAdjustPower(channel, 1),
+                  canDecrease: _game.canAdjustPower(channel, -1),
                   onAdjust: (delta) =>
                       _mutateGame(() => _game.adjustPower(channel, delta)),
                 ),
@@ -1867,11 +1869,15 @@ class _PowerRow extends StatelessWidget {
     required this.channel,
     required this.value,
     required this.onAdjust,
+    required this.canIncrease,
+    required this.canDecrease,
   });
 
   final PowerChannel channel;
   final int value;
   final void Function(int delta) onAdjust;
+  final bool canIncrease;
+  final bool canDecrease;
 
   @override
   Widget build(BuildContext context) {
@@ -1910,8 +1916,10 @@ class _PowerRow extends StatelessWidget {
           const SizedBox(width: 10),
           _StepperButton(
             icon: Icons.remove,
-            tooltip: 'Reduce ${channel.label.toLowerCase()} allocation.',
-            onTap: () => onAdjust(-1),
+            tooltip: canDecrease
+                ? 'Reduce ${channel.label.toLowerCase()} allocation.'
+                : 'Power cannot be redistributed further.',
+            onTap: canDecrease ? () => onAdjust(-1) : null,
           ),
           SizedBox(
             width: 32,
@@ -1923,8 +1931,10 @@ class _PowerRow extends StatelessWidget {
           ),
           _StepperButton(
             icon: Icons.add,
-            tooltip: 'Increase ${channel.label.toLowerCase()} allocation.',
-            onTap: () => onAdjust(1),
+            tooltip: canIncrease
+                ? 'Increase ${channel.label.toLowerCase()} allocation.'
+                : 'Power cannot be redistributed further.',
+            onTap: canIncrease ? () => onAdjust(1) : null,
           ),
         ],
       ),
@@ -2011,24 +2021,32 @@ class _StepperButton extends StatelessWidget {
 
   final IconData icon;
   final String tooltip;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onTap != null;
     return _withTooltip(
       tooltip,
-      InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Ink(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: const Color(0xFF132131),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      Opacity(
+        opacity: enabled ? 1.0 : 0.45,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Ink(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color(0xFF132131),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: Colors.white,
+            ),
           ),
-          child: Icon(icon, size: 16),
         ),
       ),
     );
@@ -3820,21 +3838,38 @@ class VanSoleGame {
     _evaluateCampaignProgress();
   }
 
+  bool canAdjustPower(PowerChannel channel, int delta) {
+    if (delta == 0) return false;
+    if (delta > 0) {
+      if (power[channel]! >= 80) return false;
+      return PowerChannel.values.any((c) => c != channel && power[c]! > 10);
+    } else {
+      if (power[channel]! <= 10) return false;
+      return PowerChannel.values.any((c) => c != channel && power[c]! < 80);
+    }
+  }
+
   void adjustPower(PowerChannel channel, int deltaSteps) {
     if (deltaSteps == 0) {
       return;
     }
+    var changed = false;
     final stepCount = deltaSteps.abs();
     for (var i = 0; i < stepCount; i++) {
       if (deltaSteps > 0) {
         if (!_shiftPowerToward(channel)) {
           break;
         }
+        changed = true;
       } else {
         if (!_shiftPowerAway(channel)) {
           break;
         }
+        changed = true;
       }
+    }
+    if (changed) {
+      _emitCue(GameAudioCue.contract);
     }
   }
 
