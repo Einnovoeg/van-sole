@@ -1,0 +1,3 @@
+## 2026-04-15 - Haptic Feedback and Semantic Redundancy
+**Learning:** Flutter's `Tooltip` widget automatically provides a semantic label to the underlying widget. Wrapping a widget with both a `Tooltip` and a `Semantics` widget with the same label causes redundant announcements for screen reader users. Additionally, haptic feedback should be mapped to the intensity and frequency of the event: `lightImpact` for frequent actions like firing, `mediumImpact` for major events like hits or docking, and `selectionClick` for UI state changes or notifications.
+**Action:** When adding tooltips for accessibility, avoid adding a redundant `Semantics` label. Use varied haptic patterns to distinguish between different types of game feedback.
