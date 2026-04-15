@@ -1,22 +1,58 @@
+/**
+ * Van Solè - Space Exploration RPG
+ * ---------------------------------
+ * A modern tribute to classic space sims (SolarWinds).
+ * 
+ * Architecture Overview:
+ * 1. Game Loop: Driven by a Flutter Ticker in VanSoleHomePage, updating
+ *    the VanSoleGame state at ~60fps.
+ * 2. Rendering: Uses a custom Sector3DPainter (CustomPainter) to project
+ *    3D coordinates to a 2D screen using perspective projection.
+ * 3. State Management: The VanSoleGame class encapsulates the entire
+ *    simulation (physics, economy, combat, campaign).
+ * 4. Content: Sector layouts, campaign missions, and commodities are
+ *    defined as static data structures within the game logic.
+ * 
+ * Key Systems:
+ * - Pseudo-3D Rendering: Depth-sorted drawing of meshes and sprites.
+ * - Power Routing: Real-time allocation of energy to ship systems.
+ * - Economy: Dynamic market pricing based on commodity volatility.
+ * - Combat: Target-locked weaponry with missile tracking.
+ * 
+ * Development Note:
+ * This codebase is designed to be a single-file core for performance 
+ * and simplicity in the renderer, with models extracted to separate 
+ * files for better organization.
+ */
 import 'dart:convert';
 import 'dart:math' as math;
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import 'constants/game_constants.dart';
+import 'constants/enums.dart';
+import 'models/player_input.dart';
+import 'models/campaign_mission.dart';
+import 'models/dialogue_encounter.dart';
+import 'models/sector_layout.dart';
+import 'models/portal_gate.dart';
+import 'models/commodity_spec.dart';
+import 'models/cargo_contract.dart';
+import 'models/station.dart';
+import 'models/resource_node.dart';
+import 'models/lore_entry.dart';
+import 'models/pirate_ship.dart';
+import 'models/projectile.dart';
+import 'models/blast.dart';
+import 'models/star_point.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const VanSoleApp());
 }
-
-// The live game is composed inside a fixed 320x200 cockpit frame and then
-// scaled up, which keeps the UI layout stable across desktop and mobile sizes.
-const String _releaseVersion = '0.1.1';
-
-const Rect _dosViewportRect = Rect.fromLTWH(0, 0, 224, 190);
-const Rect _dosViewportInnerRect = Rect.fromLTWH(2, 2, 220, 186);
-const Rect _dosPanelRect = Rect.fromLTWH(225, 0, 95, 200);
 
 /// Root application shell for the public cross-platform build.
 class VanSoleApp extends StatelessWidget {
@@ -145,23 +181,23 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
         SystemSound.play(SystemSoundType.click);
         HapticFeedback.lightImpact();
         break;
-      case GameAudioCue.contract:
-      case GameAudioCue.comms:
-        SystemSound.play(SystemSoundType.click);
-        HapticFeedback.selectionClick();
-        break;
       case GameAudioCue.hit:
         SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.mediumImpact();
+        break;
+      case GameAudioCue.dock:
+      case GameAudioCue.jump:
+        SystemSound.play(SystemSoundType.click);
         HapticFeedback.mediumImpact();
         break;
       case GameAudioCue.warning:
         SystemSound.play(SystemSoundType.alert);
         HapticFeedback.selectionClick();
         break;
-      case GameAudioCue.dock:
-      case GameAudioCue.jump:
+      case GameAudioCue.contract:
+      case GameAudioCue.comms:
         SystemSound.play(SystemSoundType.click);
-        HapticFeedback.mediumImpact();
+        HapticFeedback.selectionClick();
         break;
     }
   }
@@ -1536,9 +1572,6 @@ Widget _withTooltip(String message, Widget child) {
   return Tooltip(message: message, child: child);
 }
 
-enum SessionMode { title, playing, paused }
-
-enum VirtualAction { up, down, left, right, fire, boost }
 
 class _TouchControls extends StatelessWidget {
   const _TouchControls({
@@ -2146,13 +2179,16 @@ class _MarketPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final market = game.currentDockMarket;
-    if (market == null) {
-      return const Text(
-        'Station market uplink unavailable.',
-        style: TextStyle(color: Colors.white70),
-      );
-    }
+    return Semantics(
+      label: 'Cockpit view of space',
+      child: ColoredBox(
+        color: Colors.black,
+        child: SizedBox.expand(
+          child: CustomPaint(painter: Sector3DPainter(game, drawLegacyHud: false)),
+        ),
+      ),
+    );
+  }
 
     return Container(
       padding: const EdgeInsets.all(10),
@@ -2276,26 +2312,14 @@ extension on PowerChannel {
   };
 }
 
-class PlayerInput {
-  const PlayerInput({
-    required this.up,
-    required this.down,
-    required this.left,
-    required this.right,
-    required this.fire,
-    required this.boost,
-  });
-
-  final bool up;
-  final bool down;
-  final bool left;
-  final bool right;
-  final bool fire;
-  final bool boost;
-}
 
 // Central simulation state for navigation, trading, combat, missions,
 // reputation, save/load, and world progression.
+/// The core simulation engine for Van Solè.
+///
+/// This class manages the game state, physics, economy, combat, and 
+/// campaign progression. It is designed as a standalone state object
+/// that is updated every frame by the Flutter Ticker.
 class VanSoleGame {
   VanSoleGame() {
     _initWorld();
@@ -2308,6 +2332,7 @@ class VanSoleGame {
     );
   }
 
+  // World Constants
   static const double worldWidth = 5200;
   static const double worldHeight = 3800;
   static const double dockingRange = 120;
@@ -2317,6 +2342,8 @@ class VanSoleGame {
   static const double jumpSpeed = 75;
   static const int saveVersion = 6;
   static const int contractAccessReputationFloor = -20;
+
+  // Pirate Data
   static const List<String> _pirateHullClasses = <String>[
     'SYMLOC',
     'KADAK',
@@ -2326,6 +2353,7 @@ class VanSoleGame {
 
   final math.Random _rng = math.Random(42);
 
+  // Simulation Entities
   final List<StarPoint> stars = <StarPoint>[];
   final List<Station> stations = <Station>[];
   final List<PortalGate> portals = <PortalGate>[];
@@ -2334,6 +2362,8 @@ class VanSoleGame {
   final List<Projectile> projectiles = <Projectile>[];
   final List<Blast> blasts = <Blast>[];
   final List<String> commsLog = <String>[];
+
+  // Resource Management
   final Map<PowerChannel, int> power = <PowerChannel, int>{
     PowerChannel.engines: 35,
     PowerChannel.weapons: 30,
@@ -2347,6 +2377,7 @@ class VanSoleGame {
   final Set<String> _unlockedLoreIds = <String>{};
   final Set<int> _visitedSectors = <int>{};
 
+  // Player State
   int sectorIndex = 0;
   String sectorName = 'Perseus Fringe';
   Offset playerPosition = const Offset(900, 900);
@@ -2370,6 +2401,7 @@ class VanSoleGame {
   int cockpitMode = 1;
   int _campaignIndex = 0;
 
+  // Targeting & Proximity
   Station? dockedStation;
   Station? dockCandidate;
   PortalGate? jumpCandidate;
@@ -2383,6 +2415,7 @@ class VanSoleGame {
   CargoContract? activeContract;
   DialogueEncounter? activeEncounter;
 
+  // Internal Timers & Effects
   double _shieldRechargeDelay = 0;
   double _playerWeaponCooldown = 0;
   double _spawnTimer = 2.5;
@@ -2694,6 +2727,10 @@ class VanSoleGame {
 
   // Advance one simulation frame. Systems are stepped in a fixed order so
   // combat, docking, mission state, and HUD summaries stay deterministic.
+  /// Main game loop update.
+  ///
+  /// Handles timers, simulation updates (player, pirates, projectiles),
+  /// and resolves interactions (collisions, hits).
   void update(double dt, PlayerInput input) {
     _clock += dt;
     _playerWeaponCooldown = math.max(0, _playerWeaponCooldown - dt);
@@ -2721,6 +2758,10 @@ class VanSoleGame {
     _spawnEncounterIfNeeded();
   }
 
+  /// Updates player physics, energy, and movement.
+  ///
+  /// Handles thrust, boosting, and velocity damping based on current
+  /// power allocation and ship upgrades.
   void _updatePlayer(double dt, PlayerInput input) {
     final enginePower = power[PowerChannel.engines]! / 100;
     final weaponPower = power[PowerChannel.weapons]! / 100;
@@ -5012,284 +5053,6 @@ class VanSoleGame {
   }
 }
 
-enum CampaignGoalType {
-  dockStation,
-  deliverContracts,
-  killPirates,
-  visitSector,
-  buyUpgrades,
-  crossSectorDeliveries,
-}
-
-class CampaignMission {
-  const CampaignMission({
-    required this.title,
-    required this.description,
-    required this.goalType,
-    required this.target,
-    required this.rewardCredits,
-    this.stationId,
-    this.sectorIndex,
-  });
-
-  final String title;
-  final String description;
-  final CampaignGoalType goalType;
-  final int target;
-  final int rewardCredits;
-  final int? stationId;
-  final int? sectorIndex;
-}
-
-enum GameAudioCue { fire, hit, dock, contract, jump, comms, warning }
-
-class DialogueEncounter {
-  const DialogueEncounter({
-    required this.title,
-    required this.body,
-    required this.options,
-  });
-
-  final String title;
-  final String body;
-  final List<DialogueOption> options;
-}
-
-class DialogueOption {
-  const DialogueOption({
-    required this.label,
-    required this.resultLog,
-    this.creditsDelta = 0,
-    this.fuelDelta = 0,
-    this.energyDelta = 0,
-    this.hullDelta = 0,
-    this.shieldDelta = 0,
-    this.spawnPirates = 0,
-  });
-
-  final String label;
-  final String resultLog;
-  final int creditsDelta;
-  final double fuelDelta;
-  final double energyDelta;
-  final double hullDelta;
-  final double shieldDelta;
-  final int spawnPirates;
-}
-
-class SectorLayout {
-  const SectorLayout({
-    required this.name,
-    required this.starSeed,
-    required this.stations,
-    required this.portals,
-    required this.resources,
-  });
-
-  final String name;
-  final int starSeed;
-  final List<Station> stations;
-  final List<PortalGate> portals;
-  final List<ResourceNode> resources;
-}
-
-class PortalGate {
-  const PortalGate({
-    required this.id,
-    required this.sectorIndex,
-    required this.targetSectorIndex,
-    required this.targetPortalId,
-    required this.name,
-    required this.position,
-    required this.exitVector,
-    required this.color,
-  });
-
-  final int id;
-  final int sectorIndex;
-  final int targetSectorIndex;
-  final int targetPortalId;
-  final String name;
-  final Offset position;
-  final Offset exitVector;
-  final Color color;
-}
-
-class CommoditySpec {
-  const CommoditySpec({
-    required this.id,
-    required this.name,
-    required this.basePrice,
-    required this.volatility,
-  });
-
-  final String id;
-  final String name;
-  final int basePrice;
-  final double volatility;
-}
-
-class CargoContract {
-  CargoContract({
-    required this.id,
-    required this.pickup,
-    required this.destination,
-    required this.cargoUnits,
-    required this.rewardCredits,
-    required this.cargoName,
-    this.pickedUp = false,
-  });
-
-  final int id;
-  final Station pickup;
-  final Station destination;
-  final int cargoUnits;
-  final int rewardCredits;
-  final String cargoName;
-  bool pickedUp;
-
-  CargoContract copyForAcceptance() => CargoContract(
-    id: id,
-    pickup: pickup,
-    destination: destination,
-    cargoUnits: cargoUnits,
-    rewardCredits: rewardCredits,
-    cargoName: cargoName,
-    pickedUp: pickedUp,
-  );
-
-  String statusDescription(VanSoleGame game) {
-    if (!pickedUp) {
-      if (game.isDocked && game.dockedStation?.id == pickup.id) {
-        return 'Cargo can be loaded here (Deliver button / R).';
-      }
-      return 'Return to ${pickup.name} to load the cargo.';
-    }
-    if (game.isDocked && game.dockedStation?.id == destination.id) {
-      return 'Ready to unload at destination.';
-    }
-    return 'En route to ${destination.name}.';
-  }
-}
-
-class Station {
-  const Station({
-    required this.id,
-    required this.sectorIndex,
-    required this.name,
-    required this.position,
-    required this.color,
-    required this.blurb,
-  });
-
-  final int id;
-  final int sectorIndex;
-  final String name;
-  final Offset position;
-  final Color color;
-  final String blurb;
-}
-
-enum ResourceKind { ore, crystal, salvage, relic }
-
-class ResourceNode {
-  const ResourceNode({
-    required this.id,
-    required this.sectorIndex,
-    required this.name,
-    required this.kind,
-    required this.position,
-    required this.color,
-    required this.commodityId,
-    required this.yieldUnits,
-    required this.loreId,
-    required this.scanSummary,
-  });
-
-  final int id;
-  final int sectorIndex;
-  final String name;
-  final ResourceKind kind;
-  final Offset position;
-  final Color color;
-  final String commodityId;
-  final int yieldUnits;
-  final String loreId;
-  final String scanSummary;
-}
-
-class LoreEntry {
-  const LoreEntry({
-    required this.id,
-    required this.title,
-    required this.summary,
-    required this.body,
-  });
-
-  final String id;
-  final String title;
-  final String summary;
-  final String body;
-}
-
-class PirateShip {
-  PirateShip({
-    required this.trackingId,
-    required this.position,
-    required this.velocity,
-    required this.angle,
-    required this.hull,
-    required this.shield,
-    required this.bias,
-  });
-
-  final int trackingId;
-  Offset position;
-  Offset velocity;
-  double angle;
-  double hull;
-  double shield;
-  double fireCooldown = 0;
-  double bias;
-}
-
-class Projectile {
-  Projectile({
-    required this.position,
-    required this.velocity,
-    required this.ttl,
-    required this.damage,
-    required this.friendly,
-  });
-
-  Offset position;
-  Offset velocity;
-  double ttl;
-  double damage;
-  bool friendly;
-}
-
-class Blast {
-  Blast({required this.position, required this.ttl, required this.radius});
-
-  final Offset position;
-  double ttl;
-  final double radius;
-}
-
-class StarPoint {
-  const StarPoint({
-    required this.position,
-    required this.radius,
-    required this.alpha,
-    required this.tint,
-  });
-
-  final Offset position;
-  final double radius;
-  final double alpha;
-  final int tint;
-}
 
 // Renders the full flight scene: starfield, meshes, combat cues, cockpit
 // overlays, and post-processing inside the fixed frame.

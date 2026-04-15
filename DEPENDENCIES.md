@@ -1,24 +1,20 @@
-# Dependencies
+# Project Dependencies
 
-## Toolchain
+This project is built using the Flutter framework.
 
-- Flutter SDK: `3.38.9` stable
-- Dart SDK: `3.10.8` stable
+## Core Frameworks
+- **Flutter SDK**: `^3.38.9`
+- **Dart SDK**: `^3.10.8`
 
-## Direct runtime dependencies
+## Key Packages
+- `window_manager`: Used for controlling the desktop application window (size, position, etc.).
+- `cupertino_icons`: Standard iOS-style icons.
 
-- `flutter` (SDK)
+## Platform-Specific Dependencies
+- **macOS**: CocoaPods for plugin management.
+- **Android**: Android SDK and Gradle.
+- **Windows**: Visual Studio C++ Build Tools.
+- **Linux**: GTK 3.
 
-## Direct development dependencies
-
-- `flutter_test` (SDK)
-- `flutter_lints` `6.0.0`
-
-## Bundled assets and frameworks
-
-- Material Icons font, enabled through `uses-material-design: true`
-
-## Notes
-
-- No third-party gameplay media is bundled with this project.
-- License and attribution details are documented in `THIRD_PARTY_NOTICES.md`.
+## Installation
+Run `flutter pub get` to install all dependencies listed in `pubspec.yaml`.
