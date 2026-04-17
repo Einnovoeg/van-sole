@@ -1384,7 +1384,7 @@ class _VanSoleHomePageState extends State<VanSoleHomePage>
                   fontFamilyFallback: ['Menlo', 'Monaco', 'Courier New'],
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Save code (JSON)',
+                  labelText: 'Save code (JSON)',
                   isDense: true,
                   filled: true,
                   fillColor: const Color(0xFF0F1721),
